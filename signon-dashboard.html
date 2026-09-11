@@ -1,0 +1,1467 @@
+<title>Sign-On Console</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  color-scheme: light;
+  --plane:#f5f5f2; --surface:#fdfdfc; --surface-2:#efeeea; --surface-3:#e7e6e1;
+  --ink:#12120f; --ink-2:#52514e; --muted:#87857f;
+  --line:#e3e2db; --line-2:#cfcec6;
+  --ok:#2a78d6; --bad:#d03b3b; --good:#0ca30c; --warn:#fab219;
+  --ok-ink:#1c5cab; --bad-ink:#a82f2f;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
+  --sO:#9a988f;
+  --heat-ok:42,120,214; --heat-bad:208,59,59;
+  --shadow:0 1px 2px rgba(11,11,11,.05), 0 8px 24px -16px rgba(11,11,11,.18);
+  --r:10px; --topbar:63px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --plane:#100f0e; --surface:#1a1a19; --surface-2:#232321; --surface-3:#2c2c2a;
+    --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+    --line:#2c2c2a; --line-2:#3c3b38;
+    --ok:#3987e5; --bad:#d03b3b; --good:#0ca30c; --warn:#fab219;
+    --ok-ink:#86b6ef; --bad-ink:#e88a8a;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+    --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+    --sO:#75736c;
+    --heat-ok:57,135,229; --heat-bad:224,90,90;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 28px -18px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --plane:#100f0e; --surface:#1a1a19; --surface-2:#232321; --surface-3:#2c2c2a;
+  --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+  --line:#2c2c2a; --line-2:#3c3b38;
+  --ok:#3987e5; --bad:#d03b3b; --good:#0ca30c; --warn:#fab219;
+  --ok-ink:#86b6ef; --bad-ink:#e88a8a;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+  --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  --sO:#75736c;
+  --heat-ok:57,135,229; --heat-bad:224,90,90;
+  --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 28px -18px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{
+  background:var(--plane); color:var(--ink);
+  font-family:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1320px; margin:0 auto; padding:0 20px; padding-block:0 56px}
+h1,h2,h3{margin:0; text-wrap:balance; letter-spacing:-.012em}
+p{margin:0}
+button{font:inherit; color:inherit}
+:focus-visible{outline:2px solid var(--ok); outline-offset:2px; border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+
+.eyebrow{
+  font-family:"IBM Plex Mono", ui-monospace, monospace;
+  font-size:10.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--muted);
+}
+.mono{font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric:tabular-nums}
+
+/* ---------- top bar ---------- */
+.topbar{
+  position:sticky; top:0; z-index:30; background:var(--plane);
+  border-bottom:1px solid var(--line);
+}
+.topbar-in{
+  max-width:1320px; margin:0 auto; padding:14px 20px;
+  display:flex; flex-wrap:wrap; gap:16px; align-items:center;
+}
+.brand{display:flex; flex-direction:column; gap:1px; margin-right:auto}
+.brand h1{font-size:19px; font-weight:600}
+.srcbar{display:flex; flex-wrap:wrap; gap:6px; align-items:center}
+.chip{
+  display:inline-flex; align-items:center; gap:7px;
+  background:var(--surface); border:1px solid var(--line); border-radius:999px;
+  padding:5px 11px; font-size:12px; color:var(--ink-2); max-width:280px;
+}
+.chip .dot{width:7px; height:7px; border-radius:50%; flex:none}
+.chip b{color:var(--ink); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.btn{
+  display:inline-flex; align-items:center; gap:7px; cursor:pointer;
+  background:var(--surface); border:1px solid var(--line-2); border-radius:8px;
+  padding:7px 13px; font-size:13px; font-weight:500; color:var(--ink);
+}
+.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--ok); border-color:var(--ok); color:#fff}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.ghost{background:transparent}
+.btn.sm{padding:5px 10px; font-size:12px}
+
+/* ---------- banner ---------- */
+.banner{
+  display:flex; gap:12px; align-items:flex-start;
+  margin-top:18px; padding:12px 14px; border-radius:var(--r);
+  background:var(--surface); border:1px solid var(--line);
+  border-left:3px solid var(--warn);
+}
+.banner.err{border-left-color:var(--bad)}
+.banner .bi{font-family:"IBM Plex Mono",monospace; font-weight:600; color:var(--warn); flex:none; line-height:1.45}
+.banner.err .bi{color:var(--bad)}
+.banner p{font-size:13px; color:var(--ink-2)}
+.banner strong{color:var(--ink)}
+
+/* ---------- filters ---------- */
+.filters{
+  margin-top:18px; background:var(--surface); border:1px solid var(--line);
+  border-radius:var(--r); padding:12px 14px;
+  display:flex; flex-wrap:wrap; gap:14px 18px; align-items:flex-end;
+}
+.f{display:flex; flex-direction:column; gap:5px}
+.f label{font-size:11px; color:var(--muted); font-weight:500}
+select, input[type="text"], input[type="date"]{
+  font:inherit; font-size:13px; color:var(--ink); background:var(--surface);
+  border:1px solid var(--line-2); border-radius:7px; padding:6px 9px; min-height:32px;
+}
+input[type="text"]{min-width:180px}
+.devfilter{display:flex; flex-wrap:wrap; gap:6px; max-width:640px}
+.tog{
+  cursor:pointer; border:1px solid var(--line-2); background:var(--surface);
+  border-radius:999px; padding:4px 10px 4px 8px; font-size:12px; color:var(--ink-2);
+  display:inline-flex; align-items:center; gap:6px;
+}
+.tog .sw{width:9px; height:9px; border-radius:2px; flex:none}
+.tog[aria-pressed="true"]{background:var(--surface-3); color:var(--ink); border-color:var(--line-2)}
+.tog[aria-pressed="false"]{opacity:.5}
+.tog[aria-pressed="false"] .sw{background:var(--muted)!important}
+.f-actions{margin-left:auto; display:flex; gap:8px; align-items:center}
+
+/* ---------- kpi ---------- */
+.kpis{
+  margin-top:18px; display:grid; gap:1px; background:var(--line);
+  border:1px solid var(--line); border-radius:var(--r); overflow:hidden;
+  grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
+}
+.kpi{background:var(--surface); padding:14px 16px; display:flex; flex-direction:column; gap:3px}
+.kpi .k-label{font-size:11.5px; color:var(--muted); font-weight:500}
+.kpi .k-val{font-size:26px; font-weight:600; letter-spacing:-.02em; line-height:1.15}
+.kpi .k-sub{font-size:11.5px; color:var(--ink-2)}
+.kpi.hero{grid-column:span 2}
+.kpi.hero .k-val{font-size:52px; letter-spacing:-.03em; line-height:1.05}
+.kpi.bad .k-val{color:var(--bad-ink)}
+@media (max-width:560px){ .kpi.hero{grid-column:span 1} .kpi.hero .k-val{font-size:40px} }
+
+/* ---------- cards / sections ---------- */
+.grid2{margin-top:18px; display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(380px,1fr))}
+.card{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--r);
+  padding:16px 18px 18px;
+}
+.card-head{display:flex; flex-wrap:wrap; gap:10px; align-items:baseline; margin-bottom:2px}
+.card-head h2{font-size:15px; font-weight:600; margin-right:auto}
+.card-sub{font-size:12px; color:var(--muted); margin-bottom:14px}
+.legend{display:flex; flex-wrap:wrap; gap:12px; font-size:12px; color:var(--ink-2)}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend i{width:10px; height:10px; border-radius:2px; display:inline-block; flex:none}
+.section{margin-top:26px}
+.section-head{display:flex; flex-wrap:wrap; gap:10px 14px; align-items:baseline; margin-bottom:12px}
+.section-head h2{font-size:17px; font-weight:600}
+.section-head .rule{flex:1; height:1px; background:var(--line); min-width:20px}
+
+/* ---------- bar chart ---------- */
+.bars{display:flex; flex-direction:column; gap:14px; margin-top:4px}
+.barrow{display:grid; grid-template-columns:minmax(104px,178px) 1fr; gap:12px; align-items:center}
+.barrow .bl{font-size:12.5px; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.barstack{display:flex; flex-direction:column; gap:2px; min-width:0}
+.bar{display:flex; align-items:center; gap:8px; min-width:0}
+.bar .fill{height:11px; border-radius:0 4px 4px 0; min-width:2px; flex:none}
+.bar .bv{font-size:11.5px; color:var(--ink-2); flex:none}
+.bar.zero .fill{background:var(--line-2)!important; width:2px!important}
+
+/* ---------- daily chart ---------- */
+.daily{width:100%; height:190px; display:block; overflow:visible}
+.daily .grid{stroke:var(--line); stroke-width:1}
+.daily .axis{stroke:var(--line-2); stroke-width:1}
+.daily text{fill:var(--muted); font-size:10px; font-family:"IBM Plex Mono",monospace}
+.daily .hit{fill:transparent; cursor:crosshair}
+.daily g.on .seg{filter:brightness(1.12)}
+
+/* ---------- matrix ---------- */
+.scroller{overflow-x:auto; border:1px solid var(--line); border-radius:var(--r); background:var(--surface)}
+table.mx{border-collapse:separate; border-spacing:0; width:100%; font-size:13px}
+table.mx th, table.mx td{padding:0; text-align:right; white-space:nowrap}
+table.mx thead th{
+  position:sticky; top:var(--topbar); z-index:2; background:var(--surface);
+  border-bottom:1px solid var(--line-2); padding:10px 12px;
+  font-size:11px; font-weight:600; color:var(--ink-2); letter-spacing:.01em;
+  vertical-align:bottom;
+}
+table.mx thead th.acct{text-align:left; left:0; z-index:3}
+table.mx th.acct, table.mx td.acct{
+  position:sticky; left:0; background:var(--surface); text-align:left;
+  padding:8px 14px 8px 14px; border-right:1px solid var(--line); z-index:1;
+  font-family:"IBM Plex Mono",monospace; font-size:12.5px; font-weight:500;
+  max-width:230px; overflow:hidden; text-overflow:ellipsis;
+}
+table.mx tbody td{border-bottom:1px solid var(--line)}
+table.mx tbody tr:last-child td{border-bottom:none}
+table.mx tbody tr:hover td{background:var(--surface-2)}
+table.mx tbody tr:hover td.acct{background:var(--surface-2)}
+.cell{display:block; padding:8px 12px; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
+.cell.z{color:var(--muted); opacity:.45}
+td.tot .cell{font-weight:600}
+table.mx tfoot td{
+  border-top:1px solid var(--line-2); background:var(--surface);
+  font-family:"IBM Plex Mono",monospace; font-weight:600; font-variant-numeric:tabular-nums;
+  padding:9px 12px; position:sticky; bottom:0;
+}
+table.mx tfoot td.acct{font-weight:600}
+.sorth{cursor:pointer; user-select:none}
+.sorth[aria-sort]:not([aria-sort="none"]){color:var(--ink)}
+.sorth .car{opacity:.55; font-size:9px}
+.pill{
+  display:inline-block; padding:1px 6px; border-radius:999px; font-size:10.5px;
+  font-family:"IBM Plex Sans",sans-serif; font-weight:600; margin-left:7px; vertical-align:1px;
+}
+.pill.live{background:rgba(12,163,12,.14); color:var(--good)}
+.pill.rate{background:var(--surface-3); color:var(--ink-2)}
+.pill.rate.hot{background:rgba(208,59,59,.14); color:var(--bad-ink)}
+
+/* ---------- user cards ---------- */
+.ucards{display:grid; gap:14px; grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.ucard{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:14px 16px 16px}
+.ucard .uhead{display:flex; align-items:baseline; gap:8px; margin-bottom:2px}
+.ucard .uname{font-family:"IBM Plex Mono",monospace; font-size:13.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.ucard .utot{margin-left:auto; font-size:19px; font-weight:600; letter-spacing:-.01em}
+.ucard .umeta{font-size:11.5px; color:var(--muted); margin-bottom:11px}
+.ustack{display:flex; gap:2px; height:9px; border-radius:2px; overflow:hidden; margin-bottom:11px}
+.ustack i{display:block; height:100%; min-width:2px}
+.ulist{display:flex; flex-direction:column; gap:5px}
+.ulist .ur{display:flex; align-items:center; gap:8px; font-size:12.5px}
+.ulist .ur i{width:9px; height:9px; border-radius:2px; flex:none}
+.ulist .ur .un{color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.ulist .ur .uv{margin-left:auto; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; color:var(--ink)}
+.ufail{
+  margin-top:12px; padding-top:11px; border-top:1px solid var(--line);
+  display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-2);
+}
+.ufail .fv{margin-left:auto; font-family:"IBM Plex Mono",monospace; font-weight:600; color:var(--bad-ink)}
+.ufail.none .fv{color:var(--muted); font-weight:400}
+.ufail .fbar{flex:none; width:52px; height:4px; border-radius:2px; background:var(--surface-3); overflow:hidden}
+.ufail .fbar i{display:block; height:100%; background:var(--bad)}
+
+/* ---------- mapping ---------- */
+details.map{margin-top:12px; border:1px solid var(--line); border-radius:var(--r); background:var(--surface)}
+details.map > summary{cursor:pointer; padding:11px 14px; font-size:13px; font-weight:500; list-style:none; display:flex; gap:8px; align-items:center}
+details.map > summary::-webkit-details-marker{display:none}
+details.map > summary::before{content:"▸"; color:var(--muted); font-size:10px}
+details.map[open] > summary::before{content:"▾"}
+.mapbody{padding:0 14px 14px; display:flex; flex-direction:column; gap:14px}
+.mapsrc{border-top:1px solid var(--line); padding-top:12px}
+.mapsrc h4{margin:0 0 8px; font-size:12px; font-weight:600; font-family:"IBM Plex Mono",monospace}
+.mapgrid{display:grid; gap:9px; grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.mapgrid .f select{width:100%}
+
+/* ---------- dropzone ---------- */
+.dz{
+  margin-top:18px; border:1.5px dashed var(--line-2); border-radius:var(--r);
+  background:var(--surface); padding:34px 20px; text-align:center;
+}
+.dz h3{font-size:16px; font-weight:600; margin-bottom:6px}
+.dz p{font-size:13px; color:var(--ink-2); max-width:60ch; margin:0 auto 14px}
+.dz .mono{font-size:12px; color:var(--muted)}
+.dzover{
+  position:fixed; inset:0; z-index:100; display:none; place-items:center;
+  background:rgba(18,18,15,.55); backdrop-filter:blur(2px);
+}
+.dzover.on{display:grid}
+.dzover div{
+  background:var(--surface); border:2px dashed var(--ok); border-radius:14px;
+  padding:34px 44px; font-size:16px; font-weight:600; color:var(--ink);
+}
+
+/* ---------- tooltip ---------- */
+#tip{
+  position:fixed; z-index:200; pointer-events:none; opacity:0; transition:opacity .08s;
+  background:var(--surface); border:1px solid var(--line-2); border-radius:8px;
+  box-shadow:var(--shadow); padding:8px 10px; font-size:12px; max-width:260px;
+}
+#tip.on{opacity:1}
+#tip .tt{font-weight:600; margin-bottom:4px; font-size:12.5px}
+#tip .tr{display:flex; gap:12px; align-items:center}
+#tip .tr .tn{color:var(--ink-2)}
+#tip .tr .tv{margin-left:auto; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
+#tip i.sw{width:9px; height:9px; border-radius:2px; display:inline-block; flex:none}
+
+.empty{padding:30px 16px; text-align:center; color:var(--muted); font-size:13px}
+footer.foot{
+  margin-top:34px; padding-top:16px; border-top:1px solid var(--line);
+  font-size:11.5px; color:var(--muted); display:flex; flex-wrap:wrap; gap:6px 16px;
+}
+</style>
+
+<div class="dzover" id="dzover"><div>Drop sign-on export files to load</div></div>
+<div id="tip" role="status" aria-live="polite"></div>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand">
+      <span class="eyebrow">Workday · Signons and attempted signons</span>
+      <h1>Sign-On Console</h1>
+    </div>
+    <div class="srcbar" id="srcbar"></div>
+    <label class="btn primary" for="fileInput">Load files</label>
+    <input type="file" id="fileInput" multiple accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm" hidden>
+    <button class="btn ghost sm" id="themeBtn" type="button" title="Switch theme">Theme</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="banner"></div>
+  <div id="mapHost"></div>
+
+  <section class="filters" id="filters" aria-label="Filters">
+    <div class="f">
+      <label for="fRange">Date range</label>
+      <select id="fRange">
+        <option value="all" selected>All dates in file</option>
+        <option value="7">Last 7 days of data</option>
+        <option value="30">Last 30 days of data</option>
+        <option value="90">Last 90 days of data</option>
+        <option value="custom">Custom…</option>
+      </select>
+    </div>
+    <div class="f" id="fromWrap" hidden><label for="fFrom">From</label><input type="date" id="fFrom"></div>
+    <div class="f" id="toWrap" hidden><label for="fTo">To</label><input type="date" id="fTo"></div>
+    <div class="f">
+      <label for="fAcct">Workday account</label>
+      <input type="text" id="fAcct" placeholder="Search accounts…" autocomplete="off">
+    </div>
+    <div class="f">
+      <label>Device type</label>
+      <div class="devfilter" id="fDev"></div>
+    </div>
+    <div class="f-actions">
+      <button class="btn sm" id="fActive" type="button" aria-pressed="false">Active sessions only</button>
+      <button class="btn sm ghost" id="fReset" type="button">Reset</button>
+    </div>
+  </section>
+
+  <section class="kpis" id="kpis" aria-label="Summary"></section>
+
+  <div class="grid2">
+    <figure class="card" style="margin:0">
+      <div class="card-head"><h2>Sign-ons by device type</h2></div>
+      <p class="card-sub" id="devSub">Successful sessions and failed attempts, same scale.</p>
+      <div class="legend" style="margin-bottom:14px">
+        <span><i style="background:var(--ok)"></i>✓ Successful</span>
+        <span><i style="background:var(--bad)"></i>✕ Failed attempt</span>
+      </div>
+      <div class="bars" id="devBars"></div>
+    </figure>
+    <figure class="card" style="margin:0">
+      <div class="card-head"><h2>Daily volume</h2></div>
+      <p class="card-sub" id="dailySub">Sessions started per day.</p>
+      <div class="legend" style="margin-bottom:10px">
+        <span><i style="background:var(--ok)"></i>✓ Successful</span>
+        <span><i style="background:var(--bad)"></i>✕ Failed attempt</span>
+      </div>
+      <div id="dailyHost"></div>
+    </figure>
+  </div>
+
+  <section class="section" id="secOk">
+    <div class="section-head">
+      <h2>Sign-ons per account, by device</h2>
+      <span class="rule"></span>
+      <div class="f" style="flex-direction:row; align-items:center; gap:7px">
+        <label for="sortOk" style="font-size:11px">Sort</label>
+        <select id="sortOk">
+          <option value="total">Most sign-ons</option>
+          <option value="failed">Most failed attempts</option>
+          <option value="name">Account name</option>
+          <option value="recent">Most recent sign-on</option>
+        </select>
+      </div>
+      <button class="btn sm" id="csvOk" type="button">Export CSV</button>
+    </div>
+    <div class="scroller" id="mxOk"></div>
+  </section>
+
+  <section class="section" id="secBad">
+    <div class="section-head">
+      <h2>Failed attempts per account, by device</h2>
+      <span class="rule"></span>
+      <button class="btn sm" id="csvBad" type="button">Export CSV</button>
+    </div>
+    <div class="scroller" id="mxBad"></div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>Account detail</h2>
+      <span class="rule"></span>
+      <span class="eyebrow" id="cardCount"></span>
+      <button class="btn sm ghost" id="moreBtn" type="button" hidden>Show all accounts</button>
+    </div>
+    <div class="ucards" id="ucards"></div>
+  </section>
+
+  <footer class="foot">
+    <span id="footSrc">No file loaded</span>
+    <span id="footRows"></span>
+    <span>All parsing happens in this page — no file leaves your browser.</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ======================= constants ======================= */
+var SERIES = ["--s1","--s2","--s3","--s4","--s5","--s6","--s7","--s8"];
+var OTHER = "--sO";
+var MAX_CARDS = 12;
+
+var FIELDS = [
+  {key:"start",   label:"Session start",   hints:["sessionstart","signontime","signondate","starttime","startdate","logintime","timestamp","datetime","eventtime","date","time"]},
+  {key:"account", label:"Workday account", hints:["workdayaccount","username","userid","user","account","accountname","worker","employee","signonuser","loginname","person"]},
+  {key:"end",     label:"Session end",     hints:["sessionend","endtime","enddate","logouttime","signofftime"]},
+  {key:"active",  label:"Active session",  hints:["activesession","isactive","active","sessionactive","currentlyactive"]},
+  {key:"device",  label:"Device type",     hints:["devicetype","device","deviceclass","clienttype","devicename","platform","useragenttype","channel","authenticationchannel"]},
+  {key:"outcome", label:"Successful",      hints:["successful","success","failedsignon","signonfailed","result","status","outcome","signonstatus","signonresult","authenticationresult"]},
+  {key:"reason",  label:"Failure reason",  hints:["failuremessage","invalidcredentials","reason","failurereason","signonfailuremessage","message","errormessage","failedreason"]}
+];
+var FAILNAME = /(fail|attempt|denied|invalid|unsuccess|reject|lockout|locked)/i;
+var OKNAME   = /(signon|sign_on|sign-on|success|session|login|log_in|logon)/i;
+
+/* ======================= state ======================= */
+var state = {
+  sources: [],           // {id,name,sheet,headers,rows,map,forced,count}
+  records: [],
+  devices: [],           // ordered by total volume (stable colors)
+  devColor: {},
+  isSample: true,
+  filters:{range:"all", from:null, to:null, acct:"", devices:null, activeOnly:false},
+  sortOk:"total",
+  showAll:false,
+  errors:[]
+};
+
+/* ======================= helpers ======================= */
+function $(s,r){ return (r||document).querySelector(s); }
+function el(tag, cls, txt){ var e=document.createElement(tag); if(cls) e.className=cls; if(txt!=null) e.textContent=txt; return e; }
+function norm(s){ return String(s==null?"":s).toLowerCase().replace(/[^a-z0-9]/g,""); }
+function fmt(n){ return (n==null||isNaN(n))?"—":Number(n).toLocaleString(); }
+function pct(a,b){ return b>0 ? Math.round(a/b*1000)/10 : 0; }
+function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function cssVar(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+function parseDate(v){
+  if(v==null || v==="") return null;
+  if(v instanceof Date) return isNaN(v.getTime())?null:v;
+  if(typeof v === "number"){ // Excel serial
+    if(v>20000 && v<80000){ var d=new Date(Date.UTC(1899,11,30)+Math.round(v*86400000)); return isNaN(d.getTime())?null:d; }
+    return null;
+  }
+  var s = String(v).trim();
+  if(!s) return null;
+  // 09/11/2026 08:14:22.023 AM   |   9/11/2026 8:14 PM   |   09-11-2026 08:14
+  var m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})(?:[ ,T]+(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?\s*([AaPp][Mm])?)?/);
+  if(m){
+    var h = m[4]?+m[4]:0, ap = m[7]?m[7].toLowerCase():"";
+    if(ap==="pm" && h<12) h+=12;
+    if(ap==="am" && h===12) h=0;
+    return new Date(+m[3], +m[1]-1, +m[2], h, m[5]?+m[5]:0, m[6]?+m[6]:0);
+  }
+  // 2026-09-11 08:14:22  |  2026/09/11
+  m = s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})(?:[ ,T]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if(m) return new Date(+m[1], +m[2]-1, +m[3], m[4]?+m[4]:0, m[5]?+m[5]:0, m[6]?+m[6]:0);
+  var d2 = new Date(s);
+  return isNaN(d2.getTime()) ? null : d2;
+}
+function dayKey(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function fmtDT(d){
+  if(!d) return "—";
+  return d.toLocaleDateString(undefined,{month:"short",day:"numeric"}) + " " +
+         d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});
+}
+var TRUE = /^(y|yes|true|t|1|active|successful|success|ok|valid|granted|allowed)$/;
+var FALSE = /^(n|no|false|f|0|inactive|ended|closed|failed|failure|fail|invalid|denied|unsuccessful|rejected)$/;
+function toBool(v){
+  if(v==null || v==="") return null;
+  if(typeof v==="boolean") return v;
+  if(typeof v==="number") return v!==0;
+  var s = String(v).trim().toLowerCase();
+  if(TRUE.test(s)) return true;
+  if(FALSE.test(s)) return false;
+  return null;
+}
+
+/* ======================= column matching ======================= */
+function matchColumn(headers, field){
+  var n = headers.map(norm);
+  var i, j;
+  for(j=0;j<field.hints.length;j++){ i = n.indexOf(field.hints[j]); if(i>=0) return headers[i]; }
+  for(j=0;j<field.hints.length;j++){
+    for(i=0;i<n.length;i++){ if(n[i] && n[i].indexOf(field.hints[j])>=0) return headers[i]; }
+  }
+  return "";
+}
+function buildMap(headers){
+  var map = {};
+  FIELDS.forEach(function(f){ map[f.key] = matchColumn(headers, f); });
+  // Don't let "session end" steal "session start" and vice versa
+  if(map.start && map.start===map.end) map.end = "";
+  return map;
+}
+
+/* ======================= file reading ======================= */
+function readWorkbook(file){
+  return new Promise(function(res, rej){
+    var fr = new FileReader();
+    fr.onerror = function(){ rej(new Error("Could not read "+file.name)); };
+    fr.onload = function(e){
+      try{
+        var wb = XLSX.read(e.target.result, {type:"array", cellDates:true, raw:false, dateNF:"yyyy-mm-dd hh:mm:ss"});
+        res(wb);
+      }catch(err){ rej(new Error(file.name+": "+err.message)); }
+    };
+    fr.readAsArrayBuffer(file);
+  });
+}
+// Workday exports often carry title/blank rows above the header. Find the real header row.
+function sheetToTable(ws){
+  var aoa = XLSX.utils.sheet_to_json(ws, {header:1, defval:"", blankrows:false, raw:false});
+  if(!aoa.length) return null;
+  var bestIdx = 0, bestScore = -1, limit = Math.min(aoa.length, 15);
+  for(var r=0;r<limit;r++){
+    var row = aoa[r] || [], score = 0, filled = 0;
+    for(var c=0;c<row.length;c++){
+      var cell = String(row[c]||"").trim();
+      if(!cell) continue;
+      filled++;
+      var nn = norm(cell);
+      for(var f=0; f<FIELDS.length; f++){
+        for(var h=0; h<FIELDS[f].hints.length; h++){
+          if(nn === FIELDS[f].hints[h]){ score += 4; break; }
+          if(nn && nn.indexOf(FIELDS[f].hints[h])>=0){ score += 2; break; }
+        }
+      }
+    }
+    score += Math.min(filled,6) * 0.25;
+    if(score > bestScore){ bestScore = score; bestIdx = r; }
+  }
+  var headerRow = (aoa[bestIdx]||[]).map(function(h,i){ var t=String(h||"").trim(); return t || ("Column "+(i+1)); });
+  var seen = {};
+  headerRow = headerRow.map(function(h){ if(seen[h]){ seen[h]++; return h+" ("+seen[h]+")"; } seen[h]=1; return h; });
+  var rows = [];
+  for(var i=bestIdx+1;i<aoa.length;i++){
+    var raw = aoa[i]||[], obj = {}, any=false;
+    for(var k=0;k<headerRow.length;k++){
+      var val = raw[k]==null ? "" : raw[k];
+      obj[headerRow[k]] = val;
+      if(String(val).trim()!=="") any=true;
+    }
+    if(any) rows.push(obj);
+  }
+  return {headers:headerRow, rows:rows};
+}
+
+function classifyFile(name, sheet){
+  var s = (name||"") + " " + (sheet||"");
+  if(FAILNAME.test(s) && !OKNAME.test(s)) return "fail";
+  if(OKNAME.test(s) && !FAILNAME.test(s)) return "ok";
+  return "auto";
+}
+
+function loadFiles(files){
+  var list = Array.prototype.slice.call(files);
+  if(!list.length) return;
+  state.errors = [];
+  Promise.all(list.map(function(f){
+    return readWorkbook(f).then(function(wb){ return {file:f, wb:wb}; })
+      .catch(function(err){ state.errors.push(err.message); return null; });
+  })).then(function(results){
+    var srcs = [];
+    results.forEach(function(r){
+      if(!r) return;
+      r.wb.SheetNames.forEach(function(sn){
+        var tbl = sheetToTable(r.wb.Sheets[sn]);
+        if(!tbl || !tbl.rows.length) return;
+        srcs.push({
+          id: "s"+srcs.length,
+          name: r.file.name,
+          sheet: r.wb.SheetNames.length>1 ? sn : "",
+          headers: tbl.headers,
+          rows: tbl.rows,
+          map: buildMap(tbl.headers),
+          forced: classifyFile(r.file.name, r.wb.SheetNames.length>1?sn:"")
+        });
+      });
+    });
+    if(!srcs.length){
+      state.errors.push("No readable rows found. Check that the file has a header row with columns like Session Start, Workday Account and Device Type.");
+      renderBanner();
+      return;
+    }
+    state.sources = srcs;
+    state.isSample = false;
+    state.filters.devices = null;
+    state.showAll = false;
+    rebuild();
+  });
+}
+
+/* ======================= normalise to records ======================= */
+function rowOutcome(row, src){
+  var col = src.map.outcome;
+  if(col){
+    var raw = row[col];
+    var header = norm(col);
+    var b = toBool(raw);
+    // A "Failed Signon" column inverts the meaning of the boolean.
+    var inverted = header.indexOf("fail") >= 0 || header.indexOf("invalid") >= 0 || header.indexOf("denied") >= 0;
+    if(b !== null) return inverted ? !b : b;
+    var s = String(raw==null?"":raw).trim().toLowerCase();
+    if(s){
+      if(/fail|invalid|denied|unsuccess|reject|lock|error/.test(s)) return false;
+      if(/success|ok|valid|grant|complete/.test(s)) return true;
+    }
+  }
+  if(src.forced === "fail") return false;
+  if(src.forced === "ok") return true;
+  return true;
+}
+
+function buildRecords(){
+  var recs = [];
+  state.sources.forEach(function(src){
+    var m = src.map;
+    src.rows.forEach(function(row){
+      var acct = m.account ? String(row[m.account]==null?"":row[m.account]).trim() : "";
+      if(!acct) acct = "(no account)";
+      var dev = m.device ? String(row[m.device]==null?"":row[m.device]).trim() : "";
+      if(!dev) dev = "Unknown";
+      var startD = m.start ? parseDate(row[m.start]) : null;
+      var endD   = m.end ? parseDate(row[m.end]) : null;
+      var act    = m.active ? toBool(row[m.active]) : null;
+      if(act === null && m.end) act = !endD;      // no session end ⇒ still open
+      var reason = m.reason ? String(row[m.reason]==null?"":row[m.reason]).trim() : "";
+      recs.push({
+        t: startD, end: endD, account: acct, device: dev,
+        active: act === true,
+        ok: rowOutcome(row, src),
+        reason: reason,
+        src: src.id
+      });
+    });
+    src.count = src.rows.length;
+  });
+  state.records = recs;
+
+  var vol = {};
+  recs.forEach(function(r){ vol[r.device] = (vol[r.device]||0)+1; });
+  var devs = Object.keys(vol).sort(function(a,b){ return vol[b]-vol[a] || a.localeCompare(b); });
+  var colors = {};
+  devs.forEach(function(d,i){ colors[d] = i < SERIES.length ? SERIES[i] : OTHER; });
+  state.devices = devs;
+  state.devColor = colors;
+}
+
+/* ======================= filtering ======================= */
+function bounds(){
+  var min=null, max=null;
+  state.records.forEach(function(r){
+    if(!r.t) return;
+    if(!min || r.t<min) min=r.t;
+    if(!max || r.t>max) max=r.t;
+  });
+  return {min:min, max:max};
+}
+function filtered(){
+  var f = state.filters, b = bounds(), from=null, to=null;
+  if(f.range === "custom"){
+    if(f.from) from = new Date(f.from+"T00:00:00");
+    if(f.to)   to   = new Date(f.to+"T23:59:59");
+  } else if(f.range !== "all" && b.max){
+    to = b.max;
+    from = new Date(b.max.getTime() - (+f.range)*86400000);
+  }
+  var q = f.acct.trim().toLowerCase();
+  return state.records.filter(function(r){
+    if(from && (!r.t || r.t < from)) return false;
+    if(to   && (!r.t || r.t > to)) return false;
+    if(q && r.account.toLowerCase().indexOf(q) < 0) return false;
+    if(f.devices && !f.devices[r.device]) return false;
+    if(f.activeOnly && !r.active) return false;
+    return true;
+  });
+}
+
+/* ======================= aggregation ======================= */
+function aggregate(recs){
+  var devs = {}, users = {}, days = {}, reasons = {};
+  var totOk=0, totBad=0, active=0;
+  recs.forEach(function(r){
+    var d = devs[r.device] || (devs[r.device] = {ok:0, bad:0});
+    var u = users[r.account] || (users[r.account] = {ok:0, bad:0, active:0, dev:{}, devBad:{}, last:null});
+    if(r.ok){ d.ok++; u.ok++; totOk++; u.dev[r.device] = (u.dev[r.device]||0)+1; }
+    else{ d.bad++; u.bad++; totBad++; u.devBad[r.device] = (u.devBad[r.device]||0)+1;
+          if(r.reason) reasons[r.reason] = (reasons[r.reason]||0)+1; }
+    if(r.active){ u.active++; active++; }
+    if(r.t && (!u.last || r.t > u.last)) u.last = r.t;
+    if(r.t){
+      var k = dayKey(r.t);
+      var dd = days[k] || (days[k] = {ok:0, bad:0});
+      if(r.ok) dd.ok++; else dd.bad++;
+    }
+  });
+  return {devs:devs, users:users, days:days, reasons:reasons, totOk:totOk, totBad:totBad, active:active, n:recs.length};
+}
+
+function userRows(agg){
+  var rows = Object.keys(agg.users).map(function(name){
+    var u = agg.users[name];
+    return {name:name, ok:u.ok, bad:u.bad, active:u.active, dev:u.dev, devBad:u.devBad, last:u.last,
+            rate: pct(u.bad, u.ok + u.bad)};
+  });
+  var s = state.sortOk;
+  rows.sort(function(a,b){
+    if(s === "name") return a.name.localeCompare(b.name);
+    if(s === "failed") return b.bad - a.bad || b.ok - a.ok || a.name.localeCompare(b.name);
+    if(s === "recent") return (b.last?b.last.getTime():0) - (a.last?a.last.getTime():0) || a.name.localeCompare(b.name);
+    return b.ok - a.ok || b.bad - a.bad || a.name.localeCompare(b.name);
+  });
+  return rows;
+}
+function activeDevices(agg){
+  return state.devices.filter(function(d){ return agg.devs[d]; });
+}
+
+/* ======================= tooltip ======================= */
+var tip = $("#tip");
+function showTip(html, x, y){
+  tip.innerHTML = html;
+  tip.classList.add("on");
+  var r = tip.getBoundingClientRect();
+  var left = Math.min(x + 14, window.innerWidth - r.width - 10);
+  var top  = y - r.height - 12;
+  if(top < 8) top = y + 18;
+  tip.style.left = Math.max(8,left)+"px";
+  tip.style.top = top+"px";
+}
+function hideTip(){ tip.classList.remove("on"); }
+function bindTip(node, html){
+  node.addEventListener("mouseenter", function(e){ showTip(html, e.clientX, e.clientY); });
+  node.addEventListener("mousemove", function(e){ showTip(html, e.clientX, e.clientY); });
+  node.addEventListener("mouseleave", hideTip);
+  node.tabIndex = 0;
+  node.addEventListener("focus", function(){
+    var r = node.getBoundingClientRect();
+    showTip(html, r.left + r.width/2, r.top + 4);
+  });
+  node.addEventListener("blur", hideTip);
+}
+
+/* ======================= render: chrome ======================= */
+function renderBanner(){
+  var host = $("#banner");
+  host.innerHTML = "";
+  if(state.errors.length){
+    var b = el("div","banner err");
+    b.appendChild(el("span","bi","!"));
+    var p = el("div");
+    p.appendChild(el("p", null, state.errors.join(" ")));
+    b.appendChild(p);
+    host.appendChild(b);
+  }
+  if(state.isSample){
+    var s = el("div","banner");
+    s.appendChild(el("span","bi","◆"));
+    var w = el("div");
+    w.innerHTML = '<p><strong>Sample data — not your figures.</strong> These rows are generated so you can see the layout working. ' +
+                  'Drop the files from <span class="mono">C:\\claude\\signons_and_attempted</span> anywhere on this page (or use <strong>Load files</strong>) ' +
+                  'to replace them with your real sign-on export. CSV and XLSX both work, and nothing is uploaded.</p>';
+    s.appendChild(w);
+    host.appendChild(s);
+  }
+}
+
+function renderSources(){
+  var bar = $("#srcbar");
+  bar.innerHTML = "";
+  if(state.isSample){
+    var c = el("span","chip");
+    var d = el("span","dot"); d.style.background = cssVar("--warn");
+    c.appendChild(d); c.appendChild(el("b","","Sample data"));
+    bar.appendChild(c);
+    $("#footSrc").textContent = "Sample data — load your export to replace";
+    $("#footRows").textContent = fmt(state.records.length) + " sample rows";
+    return;
+  }
+  state.sources.forEach(function(s){
+    var c = el("span","chip");
+    var dot = el("span","dot");
+    dot.style.background = cssVar(s.forced === "fail" ? "--bad" : "--ok");
+    c.appendChild(dot);
+    c.appendChild(el("b","", s.name + (s.sheet ? " · "+s.sheet : "")));
+    c.appendChild(el("span","", fmt(s.rows.length)));
+    bar.appendChild(c);
+  });
+  $("#footSrc").textContent = state.sources.map(function(s){ return s.name + (s.sheet?" · "+s.sheet:""); }).join("  ·  ");
+  $("#footRows").textContent = fmt(state.records.length) + " rows parsed";
+}
+
+function renderMapping(){
+  var host = $("#mapHost");
+  host.innerHTML = "";
+  if(state.isSample) return;
+  var det = el("details","map");
+  var sum = el("summary");
+  var missing = state.sources.some(function(s){ return !s.map.account || !s.map.device; });
+  sum.appendChild(document.createTextNode(missing ? "Columns need checking — tell the page which column is which" : "Column mapping (detected automatically — adjust if a column is wrong)"));
+  if(missing){ det.open = true; var w = el("span","pill rate hot","check"); sum.appendChild(w); }
+  det.appendChild(sum);
+  var body = el("div","mapbody");
+  state.sources.forEach(function(src){
+    var box = el("div","mapsrc");
+    box.appendChild(el("h4","", src.name + (src.sheet ? " · "+src.sheet : "") + "  ·  " + fmt(src.rows.length) + " rows"));
+    var grid = el("div","mapgrid");
+    FIELDS.forEach(function(f){
+      var fw = el("div","f");
+      var lab = el("label","", f.label);
+      lab.setAttribute("for", "map-"+src.id+"-"+f.key);
+      var sel = el("select");
+      sel.id = "map-"+src.id+"-"+f.key;
+      var none = el("option","", f.key==="start"||f.key==="account"||f.key==="device" ? "— not mapped —" : "— none —");
+      none.value = "";
+      sel.appendChild(none);
+      src.headers.forEach(function(h){
+        var o = el("option","", h); o.value = h;
+        if(src.map[f.key] === h) o.selected = true;
+        sel.appendChild(o);
+      });
+      sel.addEventListener("change", function(){ src.map[f.key] = sel.value; rebuild(true); });
+      fw.appendChild(lab); fw.appendChild(sel);
+      grid.appendChild(fw);
+    });
+    // outcome override
+    var fw2 = el("div","f");
+    var l2 = el("label","", "Rows in this file are");
+    l2.setAttribute("for","force-"+src.id);
+    var s2 = el("select"); s2.id = "force-"+src.id;
+    [["auto","Decided by the Successful column"],["ok","All successful sign-ons"],["fail","All failed attempts"]].forEach(function(p){
+      var o = el("option","",p[1]); o.value = p[0];
+      if(src.forced === p[0]) o.selected = true;
+      s2.appendChild(o);
+    });
+    s2.addEventListener("change", function(){ src.forced = s2.value; rebuild(true); });
+    fw2.appendChild(l2); fw2.appendChild(s2);
+    grid.appendChild(fw2);
+    box.appendChild(grid);
+    body.appendChild(box);
+  });
+  det.appendChild(body);
+  host.appendChild(det);
+}
+
+function renderDeviceFilter(){
+  var host = $("#fDev");
+  host.innerHTML = "";
+  var f = state.filters;
+  state.devices.forEach(function(d){
+    var on = !f.devices || f.devices[d];
+    var b = el("button","tog");
+    b.type = "button";
+    b.setAttribute("aria-pressed", on ? "true":"false");
+    var sw = el("span","sw");
+    sw.style.background = cssVar(state.devColor[d]);
+    b.appendChild(sw);
+    b.appendChild(el("span","",d));
+    b.addEventListener("click", function(){
+      if(!f.devices){ f.devices = {}; state.devices.forEach(function(x){ f.devices[x]=true; }); }
+      f.devices[d] = !f.devices[d];
+      var anyOn = state.devices.some(function(x){ return f.devices[x]; });
+      if(!anyOn){ state.devices.forEach(function(x){ f.devices[x]=true; }); }
+      render();
+    });
+    host.appendChild(b);
+  });
+}
+
+/* ======================= render: KPIs ======================= */
+function kpi(label, value, sub, cls){
+  var k = el("div","kpi"+(cls?" "+cls:""));
+  k.appendChild(el("div","k-label",label));
+  k.appendChild(el("div","k-val",value));
+  k.appendChild(el("div","k-sub",sub||""));
+  return k;
+}
+function renderKpis(agg, recs){
+  var host = $("#kpis");
+  host.innerHTML = "";
+  var users = Object.keys(agg.users).length;
+  var devCount = activeDevices(agg).length;
+  var rate = pct(agg.totBad, agg.totOk + agg.totBad);
+  var b = {min:null,max:null};
+  recs.forEach(function(r){ if(!r.t) return; if(!b.min||r.t<b.min) b.min=r.t; if(!b.max||r.t>b.max) b.max=r.t; });
+  var span = b.min && b.max
+    ? b.min.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}) + " – " + b.max.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})
+    : "No dates parsed";
+  var perUser = users ? Math.round(agg.totOk/users*10)/10 : 0;
+
+  host.appendChild(kpi("Successful sign-ons", fmt(agg.totOk), span, "hero"));
+  host.appendChild(kpi("Failed attempts", fmt(agg.totBad), rate + "% of all sign-on events", agg.totBad ? "bad" : ""));
+  host.appendChild(kpi("Workday accounts", fmt(users), perUser + " sign-ons per account"));
+  host.appendChild(kpi("Device types", fmt(devCount), devCount ? "Most used: " + topDevice(agg) : "—"));
+  host.appendChild(kpi("Active sessions", fmt(agg.active), agg.active ? "Open at time of export" : "None open"));
+}
+function topDevice(agg){
+  var best="", n=-1;
+  Object.keys(agg.devs).forEach(function(d){ if(agg.devs[d].ok > n){ n = agg.devs[d].ok; best = d; } });
+  return best || "—";
+}
+
+/* ======================= render: device bars ======================= */
+function renderDeviceBars(agg){
+  var host = $("#devBars");
+  host.innerHTML = "";
+  var devs = activeDevices(agg);
+  if(!devs.length){ host.appendChild(el("div","empty","No rows match the current filters.")); return; }
+  var max = 0;
+  devs.forEach(function(d){ max = Math.max(max, agg.devs[d].ok, agg.devs[d].bad); });
+  if(max <= 0) max = 1;
+  var okC = cssVar("--ok"), badC = cssVar("--bad");
+  devs.sort(function(a,b){ return (agg.devs[b].ok+agg.devs[b].bad) - (agg.devs[a].ok+agg.devs[a].bad); });
+  devs.forEach(function(d){
+    var v = agg.devs[d];
+    var row = el("div","barrow");
+    var lab = el("div","bl", d);
+    lab.title = d;
+    row.appendChild(lab);
+    var stack = el("div","barstack");
+    [["ok", v.ok, okC, "Successful"], ["bad", v.bad, badC, "Failed attempt"]].forEach(function(p){
+      var bar = el("div","bar" + (p[1]===0 ? " zero":""));
+      var fill = el("div","fill");
+      fill.style.width = (p[1]/max*100) + "%";
+      fill.style.background = p[2];
+      var val = el("div","bv", fmt(p[1]));
+      bar.appendChild(fill); bar.appendChild(val);
+      bindTip(bar, '<div class="tt">'+esc(d)+'</div><div class="tr"><i class="sw" style="background:'+p[2]+'"></i><span class="tn">'+p[3]+'</span><span class="tv">'+fmt(p[1])+'</span></div>');
+      stack.appendChild(bar);
+    });
+    row.appendChild(stack);
+    host.appendChild(row);
+  });
+  $("#devSub").textContent = devs.length + " device type" + (devs.length===1?"":"s") + " in range · bars share one scale.";
+}
+
+/* ======================= render: daily ======================= */
+function renderDaily(agg){
+  var host = $("#dailyHost");
+  host.innerHTML = "";
+  var keys = Object.keys(agg.days).sort();
+  if(!keys.length){
+    host.appendChild(el("div","empty","No parsable sign-on dates in range."));
+    $("#dailySub").textContent = "Map a Session start column to see volume over time.";
+    return;
+  }
+  if(keys.length === 1){
+    var d0 = agg.days[keys[0]];
+    host.appendChild(el("div","empty","All " + fmt(d0.ok + d0.bad) + " events fall on " + keys[0] + "."));
+    $("#dailySub").textContent = "Single day in range.";
+    return;
+  }
+  $("#dailySub").textContent = keys.length + " days · " + keys[0] + " → " + keys[keys.length-1];
+
+  var W = 640, H = 190, padL = 34, padR = 8, padT = 10, padB = 24;
+  var iw = W - padL - padR, ih = H - padT - padB;
+  var max = 0;
+  keys.forEach(function(k){ max = Math.max(max, agg.days[k].ok + agg.days[k].bad); });
+  var step = Math.max(1, Math.pow(10, Math.floor(Math.log10(max||1))) / 2);
+  var top = Math.ceil((max||1)/step)*step;
+  if(top <= 0) top = 1;
+
+  var svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+  svg.setAttribute("class","daily");
+  svg.setAttribute("viewBox","0 0 "+W+" "+H);
+  svg.setAttribute("preserveAspectRatio","none");
+  svg.setAttribute("role","img");
+  svg.setAttribute("aria-label","Daily sign-on volume, successful and failed");
+  function mk(name, attrs){
+    var n = document.createElementNS("http://www.w3.org/2000/svg", name);
+    Object.keys(attrs).forEach(function(k){ n.setAttribute(k, attrs[k]); });
+    return n;
+  }
+  var ticks = 4;
+  for(var i=0;i<=ticks;i++){
+    var val = top*i/ticks, y = padT + ih - (val/top)*ih;
+    svg.appendChild(mk("line",{x1:padL, x2:W-padR, y1:y, y2:y, class:"grid"}));
+    var t = mk("text",{x:padL-6, y:y+3, "text-anchor":"end"});
+    t.textContent = Math.round(val).toLocaleString();
+    svg.appendChild(t);
+  }
+  svg.appendChild(mk("line",{x1:padL, x2:W-padR, y1:padT+ih, y2:padT+ih, class:"axis"}));
+
+  function capPath(x, y, w, h, r){
+    r = Math.max(0, Math.min(r, w/2, h));
+    return "M"+x+","+(y+h)+"L"+x+","+(y+r)+"Q"+x+","+y+" "+(x+r)+","+y+
+           "L"+(x+w-r)+","+y+"Q"+(x+w)+","+y+" "+(x+w)+","+(y+r)+"L"+(x+w)+","+(y+h)+"Z";
+  }
+  var slot = iw/keys.length;
+  var bw = Math.max(1.5, Math.min(24, slot - 2));
+  var okC = cssVar("--ok"), badC = cssVar("--bad"), surf = cssVar("--surface");
+  keys.forEach(function(k, i){
+    var d = agg.days[k];
+    var x = padL + slot*i + (slot-bw)/2;
+    var okH = (d.ok/top)*ih, badH = (d.bad/top)*ih;
+    var g = mk("g",{});
+    var yBase = padT + ih;
+    if(d.ok > 0){
+      var h1 = Math.max(1, okH);
+      // square at the baseline; the rounded end only where the bar actually stops
+      var d1 = d.bad > 0 ? "M"+x+","+(yBase-h1)+"h"+bw+"v"+h1+"h"+(-bw)+"Z" : capPath(x, yBase-h1, bw, h1, 4);
+      g.appendChild(mk("path",{d:d1, fill:okC, class:"seg"}));
+    }
+    if(d.bad > 0){
+      var gap = d.ok > 0 ? 2 : 0;
+      var h2 = Math.max(1, badH);
+      var by = yBase - okH - h2 - gap;
+      var d2 = d.ok > 0 ? capPath(x, by, bw, h2, 4) : capPath(x, by, bw, h2, 4);
+      g.appendChild(mk("path",{d:d2, fill:badC, class:"seg"}));
+    }
+    svg.appendChild(g);
+    var hit = mk("rect",{x:padL+slot*i, y:padT, width:slot, height:ih, class:"hit"});
+    var label = new Date(k+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
+    var html = '<div class="tt">'+esc(label)+'</div>' +
+      '<div class="tr"><i class="sw" style="background:'+okC+'"></i><span class="tn">Successful</span><span class="tv">'+fmt(d.ok)+'</span></div>' +
+      '<div class="tr"><i class="sw" style="background:'+badC+'"></i><span class="tn">Failed</span><span class="tv">'+fmt(d.bad)+'</span></div>';
+    hit.addEventListener("mousemove", function(e){ showTip(html, e.clientX, e.clientY); g.classList.add("on"); });
+    hit.addEventListener("mouseleave", function(){ hideTip(); g.classList.remove("on"); });
+    svg.appendChild(hit);
+  });
+  [0, Math.floor(keys.length/2), keys.length-1].filter(function(v,i,a){ return a.indexOf(v)===i; }).forEach(function(i){
+    var tx = mk("text",{x: padL + slot*i + slot/2, y: H-6, "text-anchor": i===0 ? "start" : (i===keys.length-1 ? "end" : "middle")});
+    tx.textContent = new Date(keys[i]+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric"});
+    svg.appendChild(tx);
+  });
+  host.appendChild(svg);
+}
+
+/* ======================= render: matrices ======================= */
+function heat(v, max, kind){
+  if(!v) return "transparent";
+  var a = 0.08 + 0.5 * Math.sqrt(v / (max||1));
+  return "rgba(var(--heat-"+kind+"), " + a.toFixed(3) + ")";
+}
+function renderMatrix(hostSel, rows, devs, kind, agg){
+  var host = $(hostSel);
+  host.innerHTML = "";
+  if(!rows.length || !devs.length){
+    host.appendChild(el("div","empty", kind==="bad" ? "No failed attempts in the current selection." : "No rows match the current filters."));
+    return;
+  }
+  var pickDev = kind === "bad" ? function(r){ return r.devBad; } : function(r){ return r.dev; };
+  var pickTot = kind === "bad" ? function(r){ return r.bad; } : function(r){ return r.ok; };
+  var shown = rows.filter(function(r){ return pickTot(r) > 0; });
+  if(!shown.length){
+    host.appendChild(el("div","empty", kind==="bad" ? "No failed attempts in the current selection — every sign-on succeeded." : "No successful sign-ons in the current selection."));
+    return;
+  }
+  var max = 0;
+  shown.forEach(function(r){ devs.forEach(function(d){ max = Math.max(max, pickDev(r)[d]||0); }); });
+
+  var table = el("table","mx");
+  var thead = el("thead");
+  var htr = el("tr");
+  var th0 = el("th","acct sorth");
+  th0.textContent = "Workday account";
+  th0.setAttribute("scope","col");
+  htr.appendChild(th0);
+  devs.forEach(function(d){
+    var th = el("th");
+    th.setAttribute("scope","col");
+    var sw = el("i");
+    sw.style.cssText = "display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;background:"+cssVar(state.devColor[d]);
+    th.appendChild(sw);
+    th.appendChild(document.createTextNode(d));
+    th.title = d;
+    htr.appendChild(th);
+  });
+  var thT = el("th",null,"Total");
+  thT.setAttribute("scope","col");
+  htr.appendChild(thT);
+  if(kind === "ok"){
+    var thF = el("th",null,"Failed");   thF.setAttribute("scope","col"); htr.appendChild(thF);
+    var thA = el("th",null,"Active");   thA.setAttribute("scope","col"); htr.appendChild(thA);
+    var thL = el("th",null,"Last sign-on"); thL.setAttribute("scope","col"); htr.appendChild(thL);
+  } else {
+    var thR = el("th",null,"Failure rate"); thR.setAttribute("scope","col"); htr.appendChild(thR);
+  }
+  thead.appendChild(htr);
+  table.appendChild(thead);
+
+  var tbody = el("tbody");
+  shown.forEach(function(r){
+    var tr = el("tr");
+    var td0 = el("td","acct");
+    td0.textContent = r.name;
+    td0.title = r.name;
+    tr.appendChild(td0);
+    devs.forEach(function(d){
+      var v = pickDev(r)[d] || 0;
+      var td = el("td");
+      td.style.background = heat(v, max, kind === "bad" ? "bad" : "ok");
+      var sp = el("span","cell"+(v?"":" z"), v ? fmt(v) : "·");
+      td.appendChild(sp);
+      if(v) bindTip(td, '<div class="tt">'+esc(r.name)+'</div><div class="tr"><i class="sw" style="background:'+cssVar(state.devColor[d])+'"></i><span class="tn">'+esc(d)+'</span><span class="tv">'+fmt(v)+'</span></div><div class="tr"><span class="tn">'+(kind==="bad"?"failed attempts":"sign-ons")+'</span></div>');
+      tr.appendChild(td);
+    });
+    var tdT = el("td","tot");
+    tdT.appendChild(el("span","cell", fmt(pickTot(r))));
+    tr.appendChild(tdT);
+    if(kind === "ok"){
+      var tdF = el("td");
+      var spF = el("span","cell"+(r.bad?"":" z"), r.bad ? fmt(r.bad) : "·");
+      if(r.bad) spF.style.color = cssVar("--bad-ink");
+      tdF.appendChild(spF); tr.appendChild(tdF);
+      var tdA = el("td");
+      var spA = el("span","cell"+(r.active?"":" z"), r.active ? fmt(r.active) : "·");
+      tdA.appendChild(spA);
+      if(r.active){ var pl = el("span","pill live","live"); tdA.appendChild(pl); }
+      tr.appendChild(tdA);
+      var tdL = el("td");
+      tdL.appendChild(el("span","cell", fmtDT(r.last)));
+      tr.appendChild(tdL);
+    } else {
+      var tdR = el("td");
+      var sp2 = el("span","cell", r.rate + "%");
+      tdR.appendChild(sp2);
+      if(r.rate >= 50){ var p2 = el("span","pill rate hot","high"); tdR.appendChild(p2); }
+      tr.appendChild(tdR);
+    }
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+
+  var tfoot = el("tfoot");
+  var ftr = el("tr");
+  var f0 = el("td","acct", "All accounts (" + fmt(shown.length) + ")");
+  ftr.appendChild(f0);
+  var grand = 0;
+  devs.forEach(function(d){
+    var sum = 0;
+    shown.forEach(function(r){ sum += pickDev(r)[d]||0; });
+    grand += sum;
+    ftr.appendChild(el("td","", fmt(sum)));
+  });
+  ftr.appendChild(el("td","", fmt(grand)));
+  if(kind === "ok"){
+    var sB=0, sA=0;
+    shown.forEach(function(r){ sB += r.bad; sA += r.active; });
+    ftr.appendChild(el("td","", fmt(sB)));
+    ftr.appendChild(el("td","", fmt(sA)));
+    ftr.appendChild(el("td","", ""));
+  } else {
+    ftr.appendChild(el("td","", pct(agg.totBad, agg.totOk+agg.totBad) + "%"));
+  }
+  tfoot.appendChild(ftr);
+  table.appendChild(tfoot);
+  host.appendChild(table);
+}
+
+/* ======================= render: account cards ======================= */
+function renderCards(rows, agg){
+  var host = $("#ucards");
+  host.innerHTML = "";
+  if(!rows.length){
+    host.appendChild(el("div","empty","No accounts match the current filters."));
+    $("#cardCount").textContent = "";
+    $("#moreBtn").hidden = true;
+    return;
+  }
+  var list = state.showAll ? rows : rows.slice(0, MAX_CARDS);
+  $("#cardCount").textContent = "Showing " + list.length + " of " + rows.length;
+  $("#moreBtn").hidden = rows.length <= MAX_CARDS;
+  $("#moreBtn").textContent = state.showAll ? "Show top " + MAX_CARDS : "Show all " + rows.length + " accounts";
+
+  list.forEach(function(r){
+    var card = el("div","ucard");
+    var head = el("div","uhead");
+    var nm = el("div","uname", r.name);
+    nm.title = r.name;
+    head.appendChild(nm);
+    var tot = el("div","utot", fmt(r.ok));
+    head.appendChild(tot);
+    card.appendChild(head);
+
+    var meta = el("div","umeta");
+    var bits = [];
+    bits.push(r.ok === 1 ? "1 sign-on" : fmt(r.ok) + " sign-ons");
+    if(r.active) bits.push(r.active + " active");
+    bits.push("last " + fmtDT(r.last));
+    meta.textContent = bits.join(" · ");
+    card.appendChild(meta);
+
+    var devs = Object.keys(r.dev).sort(function(a,b){ return r.dev[b]-r.dev[a] || a.localeCompare(b); });
+    if(devs.length){
+      var stack = el("div","ustack");
+      devs.forEach(function(d){
+        var i = el("i");
+        i.style.width = (r.dev[d]/r.ok*100) + "%";
+        i.style.background = cssVar(state.devColor[d]);
+        bindTip(i, '<div class="tt">'+esc(d)+'</div><div class="tr"><span class="tn">Sign-ons</span><span class="tv">'+fmt(r.dev[d])+'</span></div><div class="tr"><span class="tn">Share</span><span class="tv">'+pct(r.dev[d], r.ok)+'%</span></div>');
+        stack.appendChild(i);
+      });
+      card.appendChild(stack);
+      var ul = el("div","ulist");
+      devs.slice(0,5).forEach(function(d){
+        var row = el("div","ur");
+        var sw = el("i"); sw.style.background = cssVar(state.devColor[d]);
+        row.appendChild(sw);
+        var n = el("span","un", d); n.title = d;
+        row.appendChild(n);
+        row.appendChild(el("span","uv", fmt(r.dev[d])));
+        ul.appendChild(row);
+      });
+      if(devs.length > 5){
+        var more = el("div","ur");
+        var sw2 = el("i"); sw2.style.background = cssVar(OTHER);
+        more.appendChild(sw2);
+        more.appendChild(el("span","un", (devs.length-5) + " more device types"));
+        var rest = devs.slice(5).reduce(function(a,d){ return a + r.dev[d]; },0);
+        more.appendChild(el("span","uv", fmt(rest)));
+        ul.appendChild(more);
+      }
+      card.appendChild(ul);
+    } else {
+      card.appendChild(el("div","umeta","No successful sign-ons in range."));
+    }
+
+    var f = el("div","ufail" + (r.bad ? "" : " none"));
+    f.appendChild(el("span","", r.bad ? "Failed attempts" : "No failed attempts"));
+    if(r.bad){
+      var bar = el("div","fbar");
+      var bi = el("i");
+      bi.style.width = Math.min(100, r.rate) + "%";
+      bar.appendChild(bi);
+      f.appendChild(bar);
+      var topDev = Object.keys(r.devBad).sort(function(a,b){ return r.devBad[b]-r.devBad[a]; })[0];
+      f.appendChild(el("span","fv", fmt(r.bad) + "  ·  " + r.rate + "%"));
+      f.title = "Most failures on " + topDev;
+      bindTip(f, '<div class="tt">'+esc(r.name)+'</div>' + Object.keys(r.devBad).sort(function(a,b){ return r.devBad[b]-r.devBad[a]; }).map(function(d){
+        return '<div class="tr"><i class="sw" style="background:'+cssVar(state.devColor[d])+'"></i><span class="tn">'+esc(d)+'</span><span class="tv">'+fmt(r.devBad[d])+'</span></div>';
+      }).join(""));
+    } else {
+      f.appendChild(el("span","fv","0"));
+    }
+    card.appendChild(f);
+    host.appendChild(card);
+  });
+}
+
+/* ======================= CSV export ======================= */
+function exportCsv(rows, devs, kind){
+  var pickDev = kind === "bad" ? function(r){ return r.devBad; } : function(r){ return r.dev; };
+  var pickTot = kind === "bad" ? function(r){ return r.bad; } : function(r){ return r.ok; };
+  var head = ["Workday Account"].concat(devs).concat(kind === "bad" ? ["Total failed attempts","Successful sign-ons","Failure rate %"] : ["Total sign-ons","Failed attempts","Active sessions","Last sign-on"]);
+  var lines = [head];
+  rows.filter(function(r){ return pickTot(r) > 0; }).forEach(function(r){
+    var line = [r.name];
+    devs.forEach(function(d){ line.push(pickDev(r)[d]||0); });
+    if(kind === "bad") line.push(r.bad, r.ok, r.rate);
+    else line.push(r.ok, r.bad, r.active, r.last ? r.last.toISOString() : "");
+    lines.push(line);
+  });
+  var csv = lines.map(function(l){
+    return l.map(function(c){
+      var s = String(c==null?"":c);
+      return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+    }).join(",");
+  }).join("\r\n");
+  var name = (kind === "bad" ? "failed-attempts" : "signons") + "-per-account-by-device.csv";
+  saveFile(name, csv);
+}
+
+// Inside the artifact viewer a page can only hand over a file through the
+// downloads capability; opened as a local file it is an ordinary anchor save.
+function saveFile(name, text){
+  if(window.claude && typeof window.claude.use === "function"){
+    window.claude.use("downloads").then(function(dl){
+      if(!dl) return showCsvFallback(text, name);
+      return dl.save({filename:name, data:text}).then(function(){}, function(err){
+        if(err && err.code === "declined") return;
+        showCsvFallback(text, name);
+      });
+    }, function(){ showCsvFallback(text, name); });
+    return;
+  }
+  try{
+    var blob = new Blob([text], {type:"text/csv"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+  }catch(e){ showCsvFallback(text, name); }
+}
+function showCsvFallback(csv, name){
+  var host = $("#banner");
+  var b = el("div","banner");
+  b.appendChild(el("span","bi","↧"));
+  var w = el("div");
+  w.style.cssText = "flex:1; min-width:0";
+  w.appendChild(el("p","", "Copy this CSV into a file named " + name + " — saving a file is not available in this view."));
+  var ta = document.createElement("textarea");
+  ta.value = csv;
+  ta.readOnly = true;
+  ta.style.cssText = "width:100%; height:120px; margin-top:8px; font-family:'IBM Plex Mono',monospace; font-size:11px; border:1px solid var(--line-2); border-radius:6px; padding:8px; background:var(--surface-2); color:var(--ink)";
+  w.appendChild(ta);
+  var close = el("button","btn sm ghost","Close");
+  close.type = "button";
+  close.style.marginTop = "8px";
+  close.addEventListener("click", function(){ b.remove(); });
+  w.appendChild(close);
+  b.appendChild(w);
+  host.appendChild(b);
+  ta.focus(); ta.select();
+}
+
+/* ======================= main render ======================= */
+function render(){
+  var recs = filtered();
+  var agg = aggregate(recs);
+  var rows = userRows(agg);
+  var devs = activeDevices(agg);
+  renderBanner();
+  renderSources();
+  renderDeviceFilter();
+  renderKpis(agg, recs);
+  renderDeviceBars(agg);
+  renderDaily(agg);
+  renderMatrix("#mxOk", rows, devs, "ok", agg);
+  renderMatrix("#mxBad", rows, devs, "bad", agg);
+  renderCards(rows.filter(function(r){ return r.ok > 0 || r.bad > 0; }), agg);
+  render.rows = rows; render.devs = devs;
+}
+function rebuild(keepFilters){
+  buildRecords();
+  if(!keepFilters) state.filters.devices = null;
+  renderMapping();
+  render();
+}
+
+/* ======================= sample data ======================= */
+function makeSample(){
+  var accounts = ["lmcneil","smorgan","jhernandez","apatel","dkim","mrossi","tokafor","ychen","bwalsh","nsilva","fabbott","rgupta"];
+  var devices = ["Computer","Workday Mobile - iPhone","Tablet","Workday Mobile - Android","Mobile Browser","Workday Mobile - iPad","Unknown"];
+  var weights = [0.52,0.18,0.10,0.09,0.06,0.03,0.02];
+  var reasons = ["Invalid credentials","Password expired","Account locked out","Failed multifactor challenge"];
+  var seed = 20260911;
+  function rnd(){ seed = (seed*1103515245 + 12345) & 0x7fffffff; return seed/0x7fffffff; }
+  function pickDevice(bias){
+    var r = rnd(), acc = 0;
+    for(var i=0;i<devices.length;i++){
+      acc += weights[i] * (bias && i===0 ? 0.6 : 1);
+      if(r <= acc) return devices[i];
+    }
+    return devices[0];
+  }
+  var rows = [];
+  var end = new Date(2026, 8, 11, 18, 0, 0);
+  for(var day=27; day>=0; day--){
+    var base = new Date(end.getTime() - day*86400000);
+    var weekend = base.getDay()===0 || base.getDay()===6;
+    accounts.forEach(function(a, ai){
+      var n = Math.round((weekend ? 0.6 : 2.4) * (1 + rnd()*2.2) * (ai < 4 ? 1.5 : 0.9));
+      for(var i=0;i<n;i++){
+        var h = 7 + Math.floor(rnd()*12), mi = Math.floor(rnd()*60);
+        var start = new Date(base.getFullYear(), base.getMonth(), base.getDate(), h, mi, Math.floor(rnd()*60));
+        var dev = pickDevice(ai>=8);
+        var failed = rnd() < (ai===5 ? 0.22 : ai===9 ? 0.15 : 0.045);
+        var dur = 8 + Math.floor(rnd()*95);
+        var live = day===0 && !failed && rnd() < 0.28;
+        rows.push({
+          "Session Start": start,
+          "Workday Account": a,
+          "Session End": failed ? "" : (live ? "" : new Date(start.getTime()+dur*60000)),
+          "Active Session": live ? "Yes" : "No",
+          "Device Type": dev,
+          "Successful": failed ? "No" : "Yes",
+          "Failure Message": failed ? reasons[Math.floor(rnd()*reasons.length)] : ""
+        });
+      }
+    });
+  }
+  var headers = ["Session Start","Workday Account","Session End","Active Session","Device Type","Successful","Failure Message"];
+  state.sources = [{
+    id:"sample", name:"Sample data", sheet:"", headers:headers, rows:rows,
+    map: buildMap(headers), forced:"auto"
+  }];
+  state.isSample = true;
+}
+
+/* ======================= wiring ======================= */
+$("#fileInput").addEventListener("change", function(e){ loadFiles(e.target.files); e.target.value = ""; });
+
+var dzover = $("#dzover"), dragDepth = 0;
+window.addEventListener("dragenter", function(e){ e.preventDefault(); dragDepth++; dzover.classList.add("on"); });
+window.addEventListener("dragover", function(e){ e.preventDefault(); });
+window.addEventListener("dragleave", function(e){ dragDepth = Math.max(0,dragDepth-1); if(!dragDepth) dzover.classList.remove("on"); });
+window.addEventListener("drop", function(e){
+  e.preventDefault(); dragDepth = 0; dzover.classList.remove("on");
+  if(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) loadFiles(e.dataTransfer.files);
+});
+
+$("#fRange").addEventListener("change", function(e){
+  state.filters.range = e.target.value;
+  var custom = e.target.value === "custom";
+  $("#fromWrap").hidden = !custom; $("#toWrap").hidden = !custom;
+  if(custom && !$("#fFrom").value){
+    var b = bounds();
+    if(b.min) $("#fFrom").value = dayKey(b.min);
+    if(b.max) $("#fTo").value = dayKey(b.max);
+    state.filters.from = $("#fFrom").value; state.filters.to = $("#fTo").value;
+  }
+  render();
+});
+$("#fFrom").addEventListener("change", function(e){ state.filters.from = e.target.value; render(); });
+$("#fTo").addEventListener("change", function(e){ state.filters.to = e.target.value; render(); });
+var acctTimer;
+$("#fAcct").addEventListener("input", function(e){
+  clearTimeout(acctTimer);
+  var v = e.target.value;
+  acctTimer = setTimeout(function(){ state.filters.acct = v; render(); }, 140);
+});
+$("#fActive").addEventListener("click", function(e){
+  state.filters.activeOnly = !state.filters.activeOnly;
+  e.currentTarget.setAttribute("aria-pressed", state.filters.activeOnly ? "true":"false");
+  e.currentTarget.classList.toggle("primary", state.filters.activeOnly);
+  render();
+});
+$("#fReset").addEventListener("click", function(){
+  state.filters = {range:"all", from:null, to:null, acct:"", devices:null, activeOnly:false};
+  $("#fRange").value = "all"; $("#fAcct").value = "";
+  $("#fromWrap").hidden = true; $("#toWrap").hidden = true;
+  $("#fActive").setAttribute("aria-pressed","false");
+  $("#fActive").classList.remove("primary");
+  render();
+});
+$("#sortOk").addEventListener("change", function(e){ state.sortOk = e.target.value; render(); });
+$("#moreBtn").addEventListener("click", function(){ state.showAll = !state.showAll; render(); });
+$("#csvOk").addEventListener("click", function(){ exportCsv(render.rows||[], render.devs||[], "ok"); });
+$("#csvBad").addEventListener("click", function(){ exportCsv(render.rows||[], render.devs||[], "bad"); });
+$("#themeBtn").addEventListener("click", function(){
+  var r = document.documentElement;
+  var cur = r.getAttribute("data-theme");
+  var sysDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  var next = cur ? (cur === "dark" ? "light" : "dark") : (sysDark ? "light" : "dark");
+  r.setAttribute("data-theme", next);
+  render();
+});
+window.addEventListener("scroll", hideTip, {passive:true});
+
+/* boot */
+makeSample();
+rebuild();
+
+})();
+</script>
