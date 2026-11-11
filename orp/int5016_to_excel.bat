@@ -4,20 +4,24 @@ rem ===========================================================================
 rem  INT5016 ORP file - validate and convert to Excel
 rem
 rem  Usage:
-rem    int5016_to_excel.bat                       all files in .\input -> .\output
-rem                                               (asks for a file if .\input is empty)
-rem    int5016_to_excel.bat file1.txt [file2 ...] given files (drag-and-drop works)
-rem    int5016_to_excel.bat C:\some\folder        all data files in that folder
-rem  Any extension is accepted (.txt, .dat, none); .xlsx/.py/.bat/.xml are skipped.
+rem    int5016_to_excel.bat                       every data file in this folder
+rem                                               (asks for a file if none found)
+rem    int5016_to_excel.bat file1 [file2 ...]     given files (drag-and-drop works)
+rem    int5016_to_excel.bat C:\some\folder        every data file in that folder
+rem
+rem  Input files need no extension (e.g. CO050102026). Files ending in
+rem  .xlsx/.py/.bat/.xml/.xsl etc. are ignored.
+rem  Workbooks are written to the "output" subfolder as <name>_validated.xlsx
 rem
 rem  Set INT5016_NOPAUSE=1 to skip the final pause (scheduled jobs).
-rem  Exit code: 0 = PASS, 2 = validation errors, 1 = setup/processing problem
+rem  Exit code: 0 = PASS, 2 = validation errors, 1 or 3 = setup/input problem
 rem ===========================================================================
 
-set "SCRIPT_DIR=%~dp0"
-set "PY_SCRIPT=%SCRIPT_DIR%int5016_to_excel.py"
-set "OUT_DIR=%SCRIPT_DIR%output"
-set "IN_DIR=%SCRIPT_DIR%input"
+rem folder of this .bat without the trailing backslash
+set "BASE=%~dp0"
+set "BASE=%BASE:~0,-1%"
+set "PY_SCRIPT=%BASE%\int5016_to_excel.py"
+set "OUT_DIR=%BASE%\output"
 
 if not exist "%PY_SCRIPT%" (
     echo ERROR: %PY_SCRIPT% not found.
@@ -53,24 +57,18 @@ if not "%~1"=="" (
     goto :result
 )
 
-if not exist "%IN_DIR%" mkdir "%IN_DIR%"
-rem any file in .\input counts (no extension, .txt, .dat ...)
-set "HAS_FILES="
-for %%F in ("%IN_DIR%\*") do set "HAS_FILES=1"
-if defined HAS_FILES (
-    echo No input given - processing files in "%IN_DIR%"
-    %PY% "%PY_SCRIPT%" "%IN_DIR%" -o "%OUT_DIR%"
-    goto :result
-)
+echo Looking for INT5016 files in "%BASE%" ...
+%PY% "%PY_SCRIPT%" "%BASE%" -o "%OUT_DIR%"
+if not errorlevel 3 goto :result
 
-echo The input folder "%IN_DIR%" is empty.
-echo Copy the INT5016 file there and run again, or drag the file into this
-echo window now and press Enter.
+echo.
+echo Nothing to process. Copy the INT5016 file into "%BASE%" and run again,
+echo or drag the file into this window now and press Enter.
 set "USER_IN="
 set /p "USER_IN=File or folder: "
 if not defined USER_IN (
     echo No file given.
-    set "RC=1" & goto :end
+    set "RC=3" & goto :end
 )
 set "USER_IN=%USER_IN:"=%"
 %PY% "%PY_SCRIPT%" "%USER_IN%" -o "%OUT_DIR%"
@@ -82,6 +80,7 @@ echo.
 if "%RC%"=="0" echo RESULT: PASSED - workbook(s) in "%OUT_DIR%"
 if "%RC%"=="2" echo RESULT: VALIDATION ERRORS - see the Validation sheet in "%OUT_DIR%"
 if "%RC%"=="1" echo RESULT: PROBLEM - see messages above
+if "%RC%"=="3" echo RESULT: NO INPUT FILE FOUND
 
 :end
 if not "%INT5016_NOPAUSE%"=="1" pause

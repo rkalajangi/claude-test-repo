@@ -17,7 +17,7 @@ INPUT can be a file or a folder. For a folder every data file is processed
 (any extension, including none; .xlsx/.py/.bat/.xml etc. are skipped).
 
 Exit codes: 0 = no errors (warnings allowed), 2 = validation errors found,
-            1 = usage problem / file could not be processed.
+            1 = file could not be processed, 3 = no input files found.
 
 Requires: openpyxl  (pip install openpyxl)
 """
@@ -583,7 +583,7 @@ def main(argv=None):
     files = collect_inputs(args.inputs, args.pattern)
     if not files:
         sys.stderr.write("ERROR: no input files found\n")
-        return 1
+        return 3
     if args.output_dir:
         os.makedirs(args.output_dir, exist_ok=True)
 
