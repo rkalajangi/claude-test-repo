@@ -4,9 +4,11 @@ rem ===========================================================================
 rem  INT5016 ORP file - validate and convert to Excel
 rem
 rem  Usage:
-rem    int5016_to_excel.bat                       all *.txt in .\input  -> .\output
+rem    int5016_to_excel.bat                       all files in .\input -> .\output
+rem                                               (asks for a file if .\input is empty)
 rem    int5016_to_excel.bat file1.txt [file2 ...] given files (drag-and-drop works)
-rem    int5016_to_excel.bat C:\some\folder        all *.txt in that folder
+rem    int5016_to_excel.bat C:\some\folder        all data files in that folder
+rem  Any extension is accepted (.txt, .dat, none); .xlsx/.py/.bat/.xml are skipped.
 rem
 rem  Set INT5016_NOPAUSE=1 to skip the final pause (scheduled jobs).
 rem  Exit code: 0 = PASS, 2 = validation errors, 1 = setup/processing problem
@@ -46,13 +48,34 @@ if errorlevel 1 (
 )
 
 rem --- run --------------------------------------------------------------------
-if "%~1"=="" (
-    if not exist "%IN_DIR%" mkdir "%IN_DIR%"
-    echo No input given - processing *.txt in "%IN_DIR%"
-    %PY% "%PY_SCRIPT%" "%IN_DIR%" -o "%OUT_DIR%"
-) else (
+if not "%~1"=="" (
     %PY% "%PY_SCRIPT%" %* -o "%OUT_DIR%"
+    goto :result
 )
+
+if not exist "%IN_DIR%" mkdir "%IN_DIR%"
+rem any file in .\input counts (no extension, .txt, .dat ...)
+set "HAS_FILES="
+for %%F in ("%IN_DIR%\*") do set "HAS_FILES=1"
+if defined HAS_FILES (
+    echo No input given - processing files in "%IN_DIR%"
+    %PY% "%PY_SCRIPT%" "%IN_DIR%" -o "%OUT_DIR%"
+    goto :result
+)
+
+echo The input folder "%IN_DIR%" is empty.
+echo Copy the INT5016 file there and run again, or drag the file into this
+echo window now and press Enter.
+set "USER_IN="
+set /p "USER_IN=File or folder: "
+if not defined USER_IN (
+    echo No file given.
+    set "RC=1" & goto :end
+)
+set "USER_IN=%USER_IN:"=%"
+%PY% "%PY_SCRIPT%" "%USER_IN%" -o "%OUT_DIR%"
+
+:result
 set "RC=%ERRORLEVEL%"
 
 echo.

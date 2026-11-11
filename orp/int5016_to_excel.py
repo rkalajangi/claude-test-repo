@@ -13,7 +13,8 @@ against the layout in that stylesheet, and writes an .xlsx with:
 Usage:
     python int5016_to_excel.py INPUT [INPUT ...] [-o OUTPUT_DIR] [--pattern "*.txt"]
 
-INPUT can be a file or a folder (every file matching --pattern is processed).
+INPUT can be a file or a folder. For a folder every data file is processed
+(any extension, including none; .xlsx/.py/.bat/.xml etc. are skipped).
 
 Exit codes: 0 = no errors (warnings allowed), 2 = validation errors found,
             1 = usage problem / file could not be processed.
@@ -542,11 +543,27 @@ def build_workbook(result, out_path):
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+# Files in a folder that are never INT5016 data files
+SKIP_EXT = {".xlsx", ".xls", ".xlsm", ".py", ".bat", ".cmd", ".xsl", ".xslt", ".xml",
+            ".zip", ".pdf", ".doc", ".docx", ".log", ".ini", ".lnk"}
+
+
 def collect_inputs(inputs, pattern):
     files = []
     for item in inputs:
+        item = item.strip().strip('"')
         if os.path.isdir(item):
-            files.extend(sorted(p for p in glob.glob(os.path.join(item, pattern)) if os.path.isfile(p)))
+            found = sorted(p for p in glob.glob(os.path.join(item, pattern))
+                           if os.path.isfile(p) and not os.path.basename(p).startswith(("~$", "."))
+                           and os.path.splitext(p)[1].lower() not in SKIP_EXT)
+            if not found:
+                others = [n for n in os.listdir(item) if os.path.isfile(os.path.join(item, n))]
+                sys.stderr.write("WARNING: no data files matching '%s' in %s\n" % (pattern, item))
+                if others:
+                    sys.stderr.write("         files present (skipped): %s\n" % ", ".join(others[:20]))
+                else:
+                    sys.stderr.write("         the folder is empty\n")
+            files.extend(found)
         elif os.path.isfile(item):
             files.append(item)
         else:
@@ -558,7 +575,9 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description="Validate an INT5016 fixed-width file and convert it to Excel.")
     ap.add_argument("inputs", nargs="+", help="Input file(s) or folder(s)")
     ap.add_argument("-o", "--output-dir", help="Folder for .xlsx output (default: next to each input)")
-    ap.add_argument("--pattern", default="*.txt", help="File pattern used for folder inputs (default *.txt)")
+    ap.add_argument("--pattern", default="*",
+                    help="File pattern for folder inputs (default: every file except "
+                         "Excel/script/XML etc., so files with no extension or .dat are included)")
     args = ap.parse_args(argv)
 
     files = collect_inputs(args.inputs, args.pattern)
